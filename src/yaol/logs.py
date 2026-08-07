@@ -26,7 +26,7 @@ def setup_logs(config: ObservabilityConfig, resource: Resource) -> LoggerProvide
     return provider
 
 
-def build_handler(level: str) -> LoggingHandler:
+def build_handler(level: str = "NOTSET") -> LoggingHandler:
     """Build a stdlib logging handler that forwards records over OTLP."""
     numeric = logging.getLevelNamesMapping().get(level.upper(), logging.NOTSET)
     return LoggingHandler(level=numeric, logger_provider=_provider)
