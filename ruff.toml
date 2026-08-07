@@ -1,0 +1,33 @@
+target-version = "py313" # py314 rules are out of ai knowledge
+line-length = 88
+src = ["src"]
+
+[lint]
+ignore = [
+    "ASYNC109",
+    "C901",
+    "COM812",
+    "CPY001",
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+    "D107",
+    "D203",
+    "D213",
+    "E501",
+    "INP001",
+    "ISC001",
+    "PLR2004",
+    "PLR0912",
+    "S105",
+]
+select = ["ALL"]
+
+[lint.per-file-ignores]
+"tests/*" = ["S101", "INP001", "PLR6301"]
+
+[lint.flake8-tidy-imports]
+ban-relative-imports = "all"
