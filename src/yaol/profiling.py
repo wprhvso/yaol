@@ -15,7 +15,7 @@ def setup_profiling(config: ObservabilityConfig) -> bool:
         return False
 
     try:
-        import pyroscope  # noqa: PLC0415
+        import pyroscope
     except ImportError:
         log.warning("pyroscope_unavailable", address=config.pyroscope_address)
         return False
@@ -54,7 +54,7 @@ def shutdown_profiling() -> None:
         return
 
     try:
-        import pyroscope  # noqa: PLC0415
+        import pyroscope
 
         pyroscope.shutdown()
     except (ImportError, OSError, RuntimeError):
