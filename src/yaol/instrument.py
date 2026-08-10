@@ -10,7 +10,7 @@ log = structlog.get_logger("yaol")
 
 def instrument_sqlalchemy(engine: "AsyncEngine") -> None:
     """Add OpenTelemetry instrumentation to a SQLAlchemy AsyncEngine."""
-    from opentelemetry.instrumentation.sqlalchemy import (  # noqa: PLC0415
+    from opentelemetry.instrumentation.sqlalchemy import (
         SQLAlchemyInstrumentor,
     )
 
@@ -19,7 +19,7 @@ def instrument_sqlalchemy(engine: "AsyncEngine") -> None:
 
 def instrument_aiohttp() -> None:
     """Add OpenTelemetry instrumentation to the aiohttp client."""
-    from opentelemetry.instrumentation.aiohttp_client import (  # noqa: PLC0415
+    from opentelemetry.instrumentation.aiohttp_client import (
         AioHttpClientInstrumentor,
     )
 
@@ -28,7 +28,7 @@ def instrument_aiohttp() -> None:
 
 def instrument_asyncpg() -> None:
     """Add OpenTelemetry instrumentation to the asyncpg driver."""
-    from opentelemetry.instrumentation.asyncpg import (  # noqa: PLC0415
+    from opentelemetry.instrumentation.asyncpg import (
         AsyncPGInstrumentor,
     )
 
@@ -37,7 +37,7 @@ def instrument_asyncpg() -> None:
 
 def instrument_runtime() -> None:
     """Add OpenTelemetry instrumentation to Python runtime metrics."""
-    from opentelemetry.instrumentation.system_metrics import (  # noqa: PLC0415
+    from opentelemetry.instrumentation.system_metrics import (
         SystemMetricsInstrumentor,
     )
 

@@ -10,7 +10,7 @@ from yaol.logs import build_handler
 from yaol.processors import SHARED_PROCESSORS
 
 
-def _renderer(config: ObservabilityConfig) -> Any:  # noqa: ANN401
+def _renderer(config: ObservabilityConfig) -> Any:
     use_json = config.json_logs
     if use_json is None:
         use_json = not sys.stderr.isatty()

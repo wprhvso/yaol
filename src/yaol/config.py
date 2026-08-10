@@ -33,7 +33,7 @@ class ObservabilityConfig:
     pyroscope_tags: Mapping[str, str] = field(default_factory=dict[str, str])
 
 
-def _flag(key: str, default: bool) -> bool:  # noqa: FBT001
+def _flag(key: str, default: bool) -> bool:
     raw = os.environ.get(key)
     if raw is None:
         return default
