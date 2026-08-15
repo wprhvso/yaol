@@ -32,17 +32,18 @@ def setup_tracing(config: ObservabilityConfig, resource: Resource) -> TracerProv
     global _provider  # noqa: PLW0603
 
     provider = TracerProvider(resource=resource, sampler=build_sampler(config))
-    exporter = OTLPSpanExporter(
-        endpoint=config.otlp_endpoint, insecure=config.otlp_insecure
-    )
-    provider.add_span_processor(
-        BatchSpanProcessor(
-            exporter,
-            max_queue_size=config.span_queue_size,
-            schedule_delay_millis=config.span_schedule_delay_millis,
-            max_export_batch_size=config.span_export_batch_size,
+    if config.export_traces:
+        exporter = OTLPSpanExporter(
+            endpoint=config.otlp_endpoint, insecure=config.otlp_insecure
         )
-    )
+        provider.add_span_processor(
+            BatchSpanProcessor(
+                exporter,
+                max_queue_size=config.span_queue_size,
+                schedule_delay_millis=config.span_schedule_delay_millis,
+                max_export_batch_size=config.span_export_batch_size,
+            )
+        )
     trace.set_tracer_provider(provider)
 
     _provider = provider

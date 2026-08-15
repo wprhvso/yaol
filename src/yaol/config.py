@@ -19,6 +19,7 @@ class ObservabilityConfig:
     log_level: str = "INFO"
     json_logs: bool | None = None
     logger_levels: Mapping[str, str] = field(default_factory=dict[str, str])
+    export_traces: bool = True
     export_logs: bool = True
     export_metrics: bool = True
     metric_interval_millis: int = 30000
@@ -90,6 +91,7 @@ def from_env(
         otlp_insecure=_flag("OTEL_EXPORTER_OTLP_INSECURE", default=True),
         log_level=_text("LOG_LEVEL", "INFO"),
         json_logs=_json_logs(),
+        export_traces=_flag("YAOL_EXPORT_TRACES", default=True),
         export_logs=_flag("YAOL_EXPORT_LOGS", default=True),
         export_metrics=_flag("YAOL_EXPORT_METRICS", default=True),
         metric_interval_millis=_number("YAOL_METRIC_INTERVAL_MILLIS", 30000),
