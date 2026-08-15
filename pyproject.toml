@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "yaol"
-version = "0.1.1"
+version = "0.2.0"
 description = "Yet another observability library"
 readme = "README.md"
 requires-python = ">=3.14"
@@ -14,6 +14,9 @@ dependencies = [
     "opentelemetry-exporter-otlp-proto-grpc>=1.36",
     "opentelemetry-instrumentation-aiohttp-client>=0.57b0",
     "opentelemetry-instrumentation-asyncpg>=0.57b0",
+    "opentelemetry-instrumentation-fastapi>=0.57b0",
+    "opentelemetry-instrumentation-httpx>=0.57b0",
+    "opentelemetry-instrumentation-redis>=0.57b0",
     "opentelemetry-instrumentation-sqlalchemy>=0.57b0",
     "opentelemetry-instrumentation-system-metrics>=0.57b0",
     "opentelemetry-sdk>=1.36",
@@ -23,7 +26,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["pytest>=8.4"]
+dev = ["fastapi>=0.116", "pytest>=8.4"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/yaol"]
