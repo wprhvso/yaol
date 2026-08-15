@@ -29,7 +29,7 @@ _COLLECTOR = SpanCollector()
 
 
 @pytest.fixture(scope="session", autouse=True)
-def _provider() -> None:
+def tracing() -> None:
     # A ProxyTracer caches the provider it resolves to on first use, so the
     # global provider has to be installed once for the whole session rather
     # than swapped per test.

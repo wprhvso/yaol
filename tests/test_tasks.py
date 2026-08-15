@@ -37,6 +37,8 @@ def test_spawn_with_captured_context_continues_the_trace(
 
     update = collector.named("update")
     deferred = collector.named("deferred")
+    assert update.context is not None
+    assert deferred.context is not None
     assert deferred.parent is not None
     assert deferred.parent.span_id == update.context.span_id
     assert deferred.context.trace_id == update.context.trace_id

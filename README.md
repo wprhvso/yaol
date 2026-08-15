@@ -61,7 +61,7 @@ clean, and deferred work must resume the context it was scheduled from:
 ```python
 from yaol import capture, spawn
 
-worker = spawn(run_forever())              # clean context, its own traces
+worker = spawn(run_forever())  # clean context, its own traces
 later = spawn(handle(batch), context=ctx)  # continues the captured trace
 ```
 

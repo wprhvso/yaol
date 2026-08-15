@@ -1,3 +1,5 @@
+import asyncio
+import contextlib
 from collections.abc import Generator
 
 import pytest
@@ -58,9 +60,10 @@ def test_captured_context_continues_the_trace_after_the_parent_ends(
     with attached(captured), span("deferred") as child:
         child_context = child.get_span_context()
 
+    deferred = collector.named("deferred")
     assert child_context.trace_id == parent_context.trace_id
-    assert collector.named("deferred").parent is not None
-    assert collector.named("deferred").parent.span_id == parent_context.span_id
+    assert deferred.parent is not None
+    assert deferred.parent.span_id == parent_context.span_id
 
 
 def test_detached_starts_a_fresh_trace(collector: SpanCollector) -> None:
@@ -111,8 +114,6 @@ def test_span_kind_and_attributes_are_recorded(collector: SpanCollector) -> None
 
 
 def test_cancellation_marks_the_span(collector: SpanCollector) -> None:
-    import asyncio
-
     async def scenario() -> None:
         async def slow() -> None:
             with span("slow"):
@@ -121,10 +122,8 @@ def test_cancellation_marks_the_span(collector: SpanCollector) -> None:
         task = asyncio.create_task(slow())
         await asyncio.sleep(0)
         _ = task.cancel()
-        try:
+        with contextlib.suppress(asyncio.CancelledError):
             await task
-        except asyncio.CancelledError:
-            pass
 
     asyncio.run(scenario())
 

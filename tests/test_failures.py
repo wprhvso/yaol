@@ -1,4 +1,6 @@
+import structlog
 from conftest import SpanCollector
+from opentelemetry import trace
 from opentelemetry.trace import StatusCode
 
 from yaol.context import span
@@ -62,9 +64,7 @@ def test_event_dict_is_passed_through_unchanged() -> None:
 
 
 def test_processor_runs_before_exc_info_is_rendered() -> None:
-    import structlog
-
-    order = [processor for processor in SHARED_PROCESSORS]
+    order = list(SHARED_PROCESSORS)
     assert order.index(record_failures) < order.index(
         structlog.processors.format_exc_info
     )
@@ -75,8 +75,6 @@ def test_headers_round_trip_the_trace() -> None:
         headers = inject_headers()
 
     restored = extract_context(dict(headers))
-    from opentelemetry import trace
-
     assert (
         trace.get_current_span(restored).get_span_context().trace_id
         == outer.get_span_context().trace_id
