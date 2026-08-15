@@ -111,6 +111,10 @@ def span(
             structlog.contextvars.bind_contextvars(trace_id=trace_id)
         try:
             yield active
+        except GeneratorExit:
+            # A consumer that walks away from a generator early is control flow,
+            # not a failure.
+            raise
         except BaseException as error:
             # The SDK only handles Exception, so a span killed by cancellation or
             # a shutdown timeout would otherwise be exported as a healthy span

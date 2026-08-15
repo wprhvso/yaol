@@ -1,3 +1,5 @@
+from collections.abc import Generator
+
 import pytest
 from conftest import SpanCollector
 from opentelemetry.trace import SpanKind, StatusCode
@@ -130,3 +132,16 @@ def test_cancellation_marks_the_span(collector: SpanCollector) -> None:
     assert recorded.status.status_code is StatusCode.ERROR
     assert recorded.status.description == "CancelledError"
     assert [event.name for event in recorded.events] == ["exception"]
+
+
+def test_abandoning_a_generator_is_not_an_error(collector: SpanCollector) -> None:
+    def stream() -> Generator[int]:
+        with span("stream"):
+            yield 1
+            yield 2
+
+    generator = stream()
+    assert next(generator) == 1
+    generator.close()
+
+    assert collector.named("stream").status.status_code is not StatusCode.ERROR
