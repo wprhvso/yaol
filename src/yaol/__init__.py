@@ -7,6 +7,7 @@ from opentelemetry.sdk.resources import (
     SERVICE_VERSION,
     Resource,
 )
+from opentelemetry.trace import SpanKind
 
 from yaol.config import (
     DEFAULT_OTLP_ENDPOINT,
@@ -14,19 +15,36 @@ from yaol.config import (
     ObservabilityConfig,
     from_env,
 )
-from yaol.context import UNKNOWN_TRACE_ID, current_span_id, current_trace_id, span
+from yaol.context import (
+    UNKNOWN_TRACE_ID,
+    attached,
+    capture,
+    current_span_id,
+    current_trace_id,
+    detached,
+    fail,
+    link,
+    links,
+    record_exception,
+    span,
+)
 from yaol.instrument import (
     instrument_aiohttp,
     instrument_asyncpg,
+    instrument_fastapi,
+    instrument_httpx,
+    instrument_redis,
     instrument_runtime,
     instrument_sqlalchemy,
 )
 from yaol.log_config import build_logging_config, setup_logging
 from yaol.logs import setup_logs, shutdown_logs
 from yaol.metrics import setup_metrics, shutdown_metrics
-from yaol.processors import SHARED_PROCESSORS, inject_otel_vars
+from yaol.processors import SHARED_PROCESSORS, inject_otel_vars, record_failures
 from yaol.profiling import setup_profiling, shutdown_profiling
-from yaol.tracing import setup_tracing, shutdown_tracing
+from yaol.propagation import extract_context, inject_headers
+from yaol.tasks import spawn
+from yaol.tracing import force_flush, setup_tracing, shutdown_tracing
 
 __all__ = [
     "DEFAULT_OTLP_ENDPOINT",
@@ -34,18 +52,34 @@ __all__ = [
     "SHARED_PROCESSORS",
     "UNKNOWN_TRACE_ID",
     "ObservabilityConfig",
+    "SpanKind",
+    "attached",
     "build_logging_config",
+    "capture",
     "current_span_id",
     "current_trace_id",
+    "detached",
+    "extract_context",
+    "fail",
+    "force_flush",
     "from_env",
+    "inject_headers",
     "inject_otel_vars",
     "instrument_aiohttp",
     "instrument_asyncpg",
+    "instrument_fastapi",
+    "instrument_httpx",
+    "instrument_redis",
     "instrument_runtime",
     "instrument_sqlalchemy",
+    "link",
+    "links",
+    "record_exception",
+    "record_failures",
     "setup",
     "shutdown",
     "span",
+    "spawn",
 ]
 
 log: Final = structlog.get_logger("yaol")
