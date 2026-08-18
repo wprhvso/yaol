@@ -8,7 +8,7 @@ on:
 
 jobs:
   check:
-    runs-on: nested
+    runs-on: pool
     strategy:
       fail-fast: false
       matrix:
@@ -20,7 +20,7 @@ jobs:
           checks: ${{ matrix.check }}
 
   version:
-    runs-on: nested
+    runs-on: pool
     outputs:
       version: ${{ steps.read.outputs.version }}
       release: ${{ steps.read.outputs.release }}
@@ -52,7 +52,7 @@ jobs:
           echo "release=$release" >> "$GITHUB_OUTPUT"
 
   pypi:
-    runs-on: nested
+    runs-on: pool
     needs: [check, version]
     if: needs.version.outputs.release == 'true'
 
@@ -69,7 +69,7 @@ jobs:
       - run: uv publish --trusted-publishing always
 
   tag:
-    runs-on: nested
+    runs-on: pool
     needs: [version, pypi]
     if: needs.version.outputs.release == 'true'
 
