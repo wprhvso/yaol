@@ -45,9 +45,6 @@ def test_spawn_with_captured_context_continues_the_trace(
 
 
 def test_plain_create_task_would_inherit_the_caller(collector: SpanCollector) -> None:
-    # Documents the behaviour spawn() exists to avoid: a task created inside a
-    # span silently adopts it, so a long-lived worker keeps reporting into the
-    # trace that happened to start it.
     async def scenario() -> None:
         async def work() -> None:
             with span("inherited"):

@@ -20,7 +20,6 @@ def _renderer(config: ObservabilityConfig) -> Any:
 
 
 def build_logging_config(config: ObservabilityConfig) -> dict[str, Any]:
-    """Build a dictConfig payload wiring stdlib logging into structlog."""
     handlers: dict[str, Any] = {
         "console": {
             "level": "DEBUG",
@@ -63,7 +62,6 @@ def build_logging_config(config: ObservabilityConfig) -> dict[str, Any]:
 
 
 def setup_logging(config: ObservabilityConfig) -> None:
-    """Configure structlog and the stdlib logging hierarchy."""
     structlog.configure(
         processors=[
             *SHARED_PROCESSORS,

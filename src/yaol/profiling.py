@@ -8,7 +8,6 @@ _active = False
 
 
 def setup_profiling(config: ObservabilityConfig) -> bool:
-    """Start the Pyroscope profiler, returning whether it actually started."""
     global _active  # noqa: PLW0603
 
     if not config.profiling_enabled:
@@ -47,7 +46,6 @@ def setup_profiling(config: ObservabilityConfig) -> bool:
 
 
 def shutdown_profiling() -> None:
-    """Stop the Pyroscope profiler if it is running."""
     global _active  # noqa: PLW0603
 
     if not _active:

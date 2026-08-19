@@ -14,13 +14,6 @@ def inject_otel_vars(
     _method_name: str,
     event_dict: EventDict,
 ) -> EventDict:
-    """Inject OpenTelemetry trace and span IDs into the log event dictionary.
-
-    Keyed on context validity rather than on ``is_recording()``: a span
-    reconstructed from an incoming ``traceparent`` is a non-recording span, and
-    gating on recording would drop the trace id from exactly the logs that need
-    to be correlated with the caller's trace.
-    """
     ctx = trace.get_current_span().get_span_context()
     if ctx.is_valid:
         event_dict["trace_id"] = format(ctx.trace_id, "032x")
@@ -46,17 +39,6 @@ def record_failures(
     method_name: str,
     event_dict: EventDict,
 ) -> EventDict:
-    """Mirror error-level log events onto the active span.
-
-    Handled exceptions are the ones that matter most and the ones a trace
-    normally misses: the code logs them and carries on, so the span ends with an
-    OK status and the backend shows a healthy trace for a failed request. Every
-    ``log.exception`` and ``log.error`` therefore records an exception event and
-    sets the span status to ERROR.
-
-    Must run before ``format_exc_info``, which replaces ``exc_info`` with a
-    rendered string.
-    """
     if method_name not in _FAILURE_METHODS:
         return event_dict
 

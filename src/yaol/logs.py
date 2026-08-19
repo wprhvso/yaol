@@ -12,7 +12,6 @@ _provider: LoggerProvider | None = None
 
 
 def setup_logs(config: ObservabilityConfig, resource: Resource) -> LoggerProvider:
-    """Configure the global LoggerProvider with an OTLP gRPC exporter."""
     global _provider  # noqa: PLW0603
 
     provider = LoggerProvider(resource=resource)
@@ -27,13 +26,11 @@ def setup_logs(config: ObservabilityConfig, resource: Resource) -> LoggerProvide
 
 
 def build_handler(level: str = "NOTSET") -> LoggingHandler:
-    """Build a stdlib logging handler that forwards records over OTLP."""
     numeric = logging.getLevelNamesMapping().get(level.upper(), logging.NOTSET)
     return LoggingHandler(level=numeric, logger_provider=_provider)
 
 
 def shutdown_logs(timeout_millis: int = 5000) -> None:
-    """Flush pending log records and shut the provider down."""
     global _provider  # noqa: PLW0603
 
     if _provider is None:

@@ -88,7 +88,6 @@ _configured = False
 
 
 def build_resource(config: ObservabilityConfig) -> Resource:
-    """Build the OpenTelemetry resource describing this service."""
     attributes: dict[str, str] = {
         SERVICE_NAME: config.service_name,
         SERVICE_VERSION: config.service_version,
@@ -99,7 +98,6 @@ def build_resource(config: ObservabilityConfig) -> Resource:
 
 
 def setup(config: ObservabilityConfig) -> None:
-    """Initialize tracing, metrics, logs, logging and profiling."""
     global _configured  # noqa: PLW0603
 
     if _configured:
@@ -127,7 +125,6 @@ def setup(config: ObservabilityConfig) -> None:
 
 
 def shutdown(timeout_millis: int = 5000) -> None:
-    """Flush every signal and tear the providers down."""
     global _configured  # noqa: PLW0603
 
     shutdown_profiling()

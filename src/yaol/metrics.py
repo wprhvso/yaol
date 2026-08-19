@@ -10,7 +10,6 @@ _provider: MeterProvider | None = None
 
 
 def setup_metrics(config: ObservabilityConfig, resource: Resource) -> MeterProvider:
-    """Configure the global MeterProvider with a periodic OTLP gRPC exporter."""
     global _provider  # noqa: PLW0603
 
     exporter = OTLPMetricExporter(
@@ -27,7 +26,6 @@ def setup_metrics(config: ObservabilityConfig, resource: Resource) -> MeterProvi
 
 
 def shutdown_metrics(timeout_millis: int = 5000) -> None:
-    """Flush pending metrics and shut the provider down."""
     global _provider  # noqa: PLW0603
 
     if _provider is None:
