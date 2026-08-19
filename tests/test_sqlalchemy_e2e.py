@@ -24,14 +24,17 @@ async def test_queries_become_child_spans(
 ) -> None:
     with span("checkout") as parent:
         async with engine.connect() as connection:
-            result = await connection.execute(text("select 1"))
+            result = await connection.execute(text("SELECT 1"))
             value = result.scalar()
         expected = parent.get_span_context().span_id
 
     assert value == 1
 
-    query = next(item for item in collector.spans if item.name.startswith("SELECT"))
-    assert query.parent is not None
-    assert query.parent.span_id == expected
-    assert query.attributes is not None
-    assert "select 1" in query.attributes.values()
+    queries = [item for item in collector.spans if item.name.startswith("SELECT")]
+    assert [item.name for item in collector.spans] != []
+    assert len(queries) == 1
+    parent = queries[0].parent
+    assert parent is not None
+    assert parent.span_id == expected
+    assert queries[0].attributes is not None
+    assert "SELECT 1" in queries[0].attributes.values()

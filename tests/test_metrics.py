@@ -10,7 +10,7 @@ from yaol.metrics import setup_metrics, shutdown_metrics
 
 
 def _readers(provider: MeterProvider) -> list[Any]:
-    return list(cast("Any", provider._sdk_config).metric_readers)
+    return list(cast("Any", provider)._metric_readers)
 
 
 def _resource() -> Resource:

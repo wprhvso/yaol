@@ -110,7 +110,7 @@ def test_logs_travel_over_the_wire(otlp: Collector) -> None:
     shutdown_logs(5000)
 
     record = otlp.sink.log_with_body("payment_retried")
-    assert record.severity_text == "WARNING"
+    assert record.severity_text == "WARN"
     assert record.trace_id.hex() == expected
     assert otlp.sink.resource_attributes()["service.name"] == "checkout"
 
