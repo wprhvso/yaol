@@ -1,6 +1,7 @@
 from collections.abc import Generator, Iterable, Mapping
 from contextlib import contextmanager
-from typing import Final
+from contextvars import Token
+from typing import Any, Final
 
 import structlog
 from opentelemetry import context as context_api
@@ -80,10 +81,10 @@ def span(
         record_exception=False,
         set_status_on_exception=False,
     ) as active:
-        bound = bind_trace_id and active.get_span_context().is_valid
-        if bound:
+        tokens: Mapping[str, Token[Any]] = {}
+        if bind_trace_id and active.get_span_context().is_valid:
             trace_id = format(active.get_span_context().trace_id, "032x")
-            structlog.contextvars.bind_contextvars(trace_id=trace_id)
+            tokens = structlog.contextvars.bind_contextvars(trace_id=trace_id)
         try:
             yield active
         except GeneratorExit:
@@ -93,8 +94,7 @@ def span(
             active.set_status(Status(StatusCode.ERROR, type(error).__name__))
             raise
         finally:
-            if bound:
-                structlog.contextvars.unbind_contextvars("trace_id")
+            structlog.contextvars.reset_contextvars(**tokens)
 
 
 def record_exception(

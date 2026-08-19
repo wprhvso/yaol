@@ -1,3 +1,4 @@
+import math
 import os
 from collections.abc import Mapping
 from dataclasses import dataclass, field
@@ -55,9 +56,10 @@ def _number(key: str, default: int) -> int:
     if not raw:
         return default
     try:
-        return int(raw)
+        value = int(raw)
     except ValueError:
         return default
+    return value if value > 0 else default
 
 
 def _ratio(key: str, default: float) -> float:
@@ -65,9 +67,12 @@ def _ratio(key: str, default: float) -> float:
     if not raw:
         return default
     try:
-        return min(max(float(raw), 0.0), 1.0)
+        value = float(raw)
     except ValueError:
         return default
+    if math.isnan(value):
+        return default
+    return min(max(value, 0.0), 1.0)
 
 
 def _json_logs() -> bool | None:

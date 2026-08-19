@@ -13,7 +13,7 @@ from yaol.processors import SHARED_PROCESSORS
 def _renderer(config: ObservabilityConfig) -> Any:
     use_json = config.json_logs
     if use_json is None:
-        use_json = not sys.stderr.isatty()
+        use_json = not sys.stdout.isatty()
     if use_json:
         return structlog.processors.JSONRenderer()
     return structlog.dev.ConsoleRenderer()
@@ -34,6 +34,7 @@ def build_logging_config(config: ObservabilityConfig) -> dict[str, Any]:
         handlers["otlp"] = {
             "()": build_handler,
             "level": config.log_level,
+            "formatter": "otlp",
         }
         active.append("otlp")
 
@@ -52,6 +53,14 @@ def build_logging_config(config: ObservabilityConfig) -> dict[str, Any]:
                 "processors": [
                     structlog.stdlib.ProcessorFormatter.remove_processors_meta,
                     _renderer(config),
+                ],
+                "foreign_pre_chain": SHARED_PROCESSORS,
+            },
+            "otlp": {
+                "()": structlog.stdlib.ProcessorFormatter,
+                "processors": [
+                    structlog.stdlib.ProcessorFormatter.remove_processors_meta,
+                    structlog.processors.JSONRenderer(),
                 ],
                 "foreign_pre_chain": SHARED_PROCESSORS,
             },

@@ -3,12 +3,15 @@ import contextlib
 from collections.abc import Generator
 
 import pytest
+import structlog
 from conftest import SpanCollector
 from opentelemetry.trace import SpanKind, StatusCode
 
 from yaol.context import (
+    UNKNOWN_TRACE_ID,
     attached,
     capture,
+    current_span_id,
     current_trace_id,
     detached,
     fail,
@@ -144,3 +147,134 @@ def test_abandoning_a_generator_is_not_an_error(collector: SpanCollector) -> Non
     generator.close()
 
     assert collector.named("stream").status.status_code is not StatusCode.ERROR
+
+
+def test_ids_are_unknown_outside_a_span() -> None:
+    with detached():
+        assert current_trace_id() == UNKNOWN_TRACE_ID
+        assert current_span_id() == UNKNOWN_TRACE_ID
+
+
+def test_ids_are_hex_of_the_active_span() -> None:
+    with span("work") as active:
+        context = active.get_span_context()
+        assert current_trace_id() == format(context.trace_id, "032x")
+        assert current_span_id() == format(context.span_id, "016x")
+
+
+def test_trace_id_is_bound_for_logging() -> None:
+    with span("work") as active:
+        bound = structlog.contextvars.get_contextvars()
+        assert bound["trace_id"] == format(active.get_span_context().trace_id, "032x")
+
+    assert "trace_id" not in structlog.contextvars.get_contextvars()
+
+
+def test_nested_span_leaves_the_outer_trace_id_bound() -> None:
+    with span("outer") as outer:
+        expected = format(outer.get_span_context().trace_id, "032x")
+        with span("inner"):
+            pass
+        assert structlog.contextvars.get_contextvars()["trace_id"] == expected
+
+
+def test_binding_can_be_disabled() -> None:
+    with span("work", bind_trace_id=False):
+        assert "trace_id" not in structlog.contextvars.get_contextvars()
+
+
+def test_trace_id_is_unbound_when_the_span_fails() -> None:
+    with pytest.raises(ValueError, match="boom"), span("work"):
+        raise ValueError("boom")
+
+    assert "trace_id" not in structlog.contextvars.get_contextvars()
+
+
+def test_nested_spans_share_the_trace(collector: SpanCollector) -> None:
+    with span("outer") as outer, span("inner") as inner:
+        assert inner.get_span_context().trace_id == outer.get_span_context().trace_id
+        outer_id = outer.get_span_context().span_id
+
+    recorded = collector.named("inner")
+    assert recorded.parent is not None
+    assert recorded.parent.span_id == outer_id
+
+
+def test_record_exception_outside_a_span_is_silent() -> None:
+    with detached():
+        record_exception(ValueError("boom"))
+        fail("nothing to mark")
+
+
+def test_record_exception_carries_attributes(collector: SpanCollector) -> None:
+    with span("work"):
+        record_exception(ValueError("boom"), attributes={"retry": 2})
+
+    event = collector.named("work").events[0]
+    assert event.attributes is not None
+    assert event.attributes["retry"] == 2
+
+
+def test_escaping_exception_type_is_the_status_description(
+    collector: SpanCollector,
+) -> None:
+    with pytest.raises(KeyError), span("work"):
+        raise KeyError("missing")
+
+    assert collector.named("work").status.description == "KeyError"
+
+
+def test_explicit_context_parents_the_span(collector: SpanCollector) -> None:
+    with span("first") as first:
+        captured = capture()
+        parent = first.get_span_context()
+
+    with detached(), span("second", context=captured):
+        pass
+
+    recorded = collector.named("second")
+    assert recorded.parent is not None
+    assert recorded.parent.span_id == parent.span_id
+
+
+def test_links_of_an_empty_iterable_is_empty() -> None:
+    assert links([]) == []
+
+
+def test_links_drop_invalid_contexts() -> None:
+    with detached():
+        empty = capture()
+    with span("first"):
+        real = capture()
+
+    assert len(links([empty, real])) == 1
+
+
+def test_link_survives_a_captured_context() -> None:
+    with span("first") as first:
+        built = link(capture())
+
+    assert built is not None
+    assert built.context.span_id == first.get_span_context().span_id
+
+
+def test_attached_restores_the_previous_context() -> None:
+    with span("outer") as outer:
+        with detached(), span("worker"):
+            pass
+        assert current_trace_id() == format(outer.get_span_context().trace_id, "032x")
+
+
+def test_cancellation_of_the_awaiting_task_is_recorded_once(
+    collector: SpanCollector,
+) -> None:
+    async def scenario() -> None:
+        with span("outer"):
+            task = asyncio.create_task(asyncio.sleep(10))
+            _ = task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await task
+
+    asyncio.run(scenario())
+
+    assert collector.named("outer").status.status_code is not StatusCode.ERROR
