@@ -43,6 +43,22 @@ def test_runtime_metrics_can_be_switched_on_and_off() -> None:
     assert instrumentor.is_instrumented_by_opentelemetry is False
 
 
+def test_runtime_metrics_can_leave_out_the_host_wide_ones() -> None:
+    instrumentor = SystemMetricsInstrumentor()
+    default = set(instrumentor._config)
+    try:
+        instrument_runtime(system_metrics=False)
+        collected = set(instrumentor._config)
+
+        assert instrumentor.is_instrumented_by_opentelemetry is True
+        assert collected != default
+        assert any(name.startswith("system.") for name in default)
+        assert not any(name.startswith("system.") for name in collected)
+        assert "process.runtime.cpu.time" in collected
+    finally:
+        instrumentor.uninstrument()
+
+
 def test_aiohttp_client_can_be_instrumented() -> None:
     _ = pytest.importorskip("aiohttp")
     from opentelemetry.instrumentation.aiohttp_client import AioHttpClientInstrumentor

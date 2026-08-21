@@ -26,8 +26,57 @@ shutdown()
 `ENV`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `LOG_LEVEL`, `YAOL_JSON_LOGS`,
 `YAOL_EXPORT_TRACES`, `YAOL_EXPORT_LOGS`, `YAOL_EXPORT_METRICS`, `YAOL_METRIC_INTERVAL_MILLIS`,
 `YAOL_PROFILING_ENABLED`, `PYROSCOPE_ADDRESS`, `PYROSCOPE_SAMPLE_RATE`,
+`PYROSCOPE_ONCPU`, `PYROSCOPE_GIL_ONLY`, `PYROSCOPE_REPORT_PID`,
+`PYROSCOPE_REPORT_THREAD_ID`, `PYROSCOPE_TAGS`,
 `YAOL_TRACE_SAMPLE_RATIO`, `YAOL_SPAN_QUEUE_SIZE`,
 `YAOL_SPAN_SCHEDULE_DELAY_MILLIS`, `YAOL_SPAN_EXPORT_BATCH_SIZE`.
+
+`PYROSCOPE_TAGS` is a `key=value,key=value` list. Entries without `=` or with an
+empty key are dropped rather than fatal, values may themselves contain `=`, and
+the last duplicate wins.
+
+## Kubernetes
+
+Profiles need pod identity to be worth reading — with several replicas pushing
+under one `application_name`, every flamegraph is a blend. Give the agent the
+pod name through the downward API:
+
+```yaml
+env:
+  - name: POD_NAME
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.name
+  - name: PYROSCOPE_TAGS
+    value: "pod=$(POD_NAME)"
+```
+
+Resource attributes arrive the same way, but `from_env` does not read them:
+`Resource.create()` already picks up the standard `OTEL_RESOURCE_ATTRIBUTES` via
+the SDK's own detector, and a second mechanism for one thing only confuses. The
+`resource_attributes` field stays for programmatic configuration.
+
+```yaml
+env:
+  - name: POD_NAME
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.name
+  - name: OTEL_RESOURCE_ATTRIBUTES
+    value: "k8s.pod.name=$(POD_NAME),k8s.namespace.name=$(POD_NS)"
+```
+
+`instrument_runtime()` collects `system.*` metrics from `/proc`, which inside a
+container is the node's — `system.memory.usage` would report the whole host once
+per pod. cAdvisor already reports the container's side of that, so ask for the
+process's own metrics only:
+
+```python
+instrument_runtime(system_metrics=False)  # process.* and cpython.*, no system.*
+```
+
+Collecting logs from container stdout instead of OTLP means `YAOL_EXPORT_LOGS=false`;
+the stdout handler stays.
 
 ## Keeping a trace whole
 

@@ -75,6 +75,22 @@ def _ratio(key: str, default: float) -> float:
     return min(max(value, 0.0), 1.0)
 
 
+def _tags(key: str) -> dict[str, str]:
+    raw = os.environ.get(key)
+    if not raw:
+        return {}
+    tags: dict[str, str] = {}
+    for entry in raw.split(","):
+        name, separator, value = entry.partition("=")
+        if not separator:
+            continue
+        name = name.strip()
+        if not name:
+            continue
+        tags[name] = value.strip()
+    return tags
+
+
 def _json_logs() -> bool | None:
     raw = os.environ.get("YAOL_JSON_LOGS")
     if raw is None:
@@ -107,4 +123,9 @@ def from_env(
         profiling_enabled=_flag("YAOL_PROFILING_ENABLED", default=False),
         pyroscope_address=_text("PYROSCOPE_ADDRESS", DEFAULT_PYROSCOPE_ADDRESS),
         pyroscope_sample_rate=_number("PYROSCOPE_SAMPLE_RATE", 100),
+        pyroscope_oncpu=_flag("PYROSCOPE_ONCPU", default=True),
+        pyroscope_gil_only=_flag("PYROSCOPE_GIL_ONLY", default=True),
+        pyroscope_report_pid=_flag("PYROSCOPE_REPORT_PID", default=False),
+        pyroscope_report_thread_id=_flag("PYROSCOPE_REPORT_THREAD_ID", default=False),
+        pyroscope_tags=_tags("PYROSCOPE_TAGS"),
     )

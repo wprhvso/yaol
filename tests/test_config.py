@@ -24,6 +24,11 @@ _KEYS = (
     "YAOL_PROFILING_ENABLED",
     "PYROSCOPE_ADDRESS",
     "PYROSCOPE_SAMPLE_RATE",
+    "PYROSCOPE_ONCPU",
+    "PYROSCOPE_GIL_ONLY",
+    "PYROSCOPE_REPORT_PID",
+    "PYROSCOPE_REPORT_THREAD_ID",
+    "PYROSCOPE_TAGS",
 )
 
 
@@ -174,3 +179,66 @@ def test_insecure_can_be_turned_off(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("OTEL_EXPORTER_OTLP_INSECURE", "false")
 
     assert from_env("bot").otlp_insecure is False
+
+
+def test_pyroscope_flags_are_read_from_the_environment(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("PYROSCOPE_ONCPU", "false")
+    monkeypatch.setenv("PYROSCOPE_GIL_ONLY", "off")
+    monkeypatch.setenv("PYROSCOPE_REPORT_PID", "true")
+    monkeypatch.setenv("PYROSCOPE_REPORT_THREAD_ID", "1")
+
+    config = from_env("bot")
+
+    assert config.pyroscope_oncpu is False
+    assert config.pyroscope_gil_only is False
+    assert config.pyroscope_report_pid is True
+    assert config.pyroscope_report_thread_id is True
+
+
+def test_pyroscope_tags_are_read_as_pairs(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("PYROSCOPE_TAGS", "pod=bot-7d9f4,namespace=prod")
+
+    assert from_env("bot").pyroscope_tags == {"pod": "bot-7d9f4", "namespace": "prod"}
+
+
+def test_pyroscope_tags_lose_their_padding(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("PYROSCOPE_TAGS", "  pod = bot-7d9f4 ,\tnamespace = prod\n")
+
+    assert from_env("bot").pyroscope_tags == {"pod": "bot-7d9f4", "namespace": "prod"}
+
+
+def test_pyroscope_tags_are_empty_without_a_variable() -> None:
+    assert from_env("bot").pyroscope_tags == {}
+
+
+@pytest.mark.parametrize("raw", ["", "   ", "pod", "pod,namespace", "=prod", " = prod"])
+def test_unusable_pyroscope_tags_leave_nothing_behind(
+    monkeypatch: pytest.MonkeyPatch, raw: str
+) -> None:
+    monkeypatch.setenv("PYROSCOPE_TAGS", raw)
+
+    assert from_env("bot").pyroscope_tags == {}
+
+
+def test_a_broken_pyroscope_tag_does_not_take_the_others_with_it(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("PYROSCOPE_TAGS", "pod,=prod,namespace=prod")
+
+    assert from_env("bot").pyroscope_tags == {"namespace": "prod"}
+
+
+def test_a_pyroscope_tag_value_may_contain_equals_signs(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("PYROSCOPE_TAGS", "selector=app=bot")
+
+    assert from_env("bot").pyroscope_tags == {"selector": "app=bot"}
+
+
+def test_the_last_pyroscope_tag_wins(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("PYROSCOPE_TAGS", "pod=first,pod=second")
+
+    assert from_env("bot").pyroscope_tags == {"pod": "second"}

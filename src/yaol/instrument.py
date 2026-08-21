@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 import structlog
 
@@ -7,6 +7,8 @@ if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncEngine
 
 log = structlog.get_logger("yaol")
+
+_HOST_METRIC_PREFIX: Final = "system."
 
 
 def instrument_sqlalchemy(engine: "AsyncEngine") -> None:
@@ -57,9 +59,19 @@ def instrument_asyncpg() -> None:
     AsyncPGInstrumentor().instrument()
 
 
-def instrument_runtime() -> None:
+def instrument_runtime(*, system_metrics: bool = True) -> None:
     from opentelemetry.instrumentation.system_metrics import (
+        _DEFAULT_CONFIG,
         SystemMetricsInstrumentor,
     )
 
-    SystemMetricsInstrumentor().instrument()
+    if system_metrics:
+        SystemMetricsInstrumentor().instrument()
+        return
+
+    config: dict[str, list[str] | None] = {
+        metric: labels
+        for metric, labels in _DEFAULT_CONFIG.items()
+        if not metric.startswith(_HOST_METRIC_PREFIX)
+    }
+    SystemMetricsInstrumentor(config=config).instrument()
